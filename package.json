@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf dist && tsc",
     "dev": "tsx --watch src/app.ts",
-    "start": "npm run build && node",
+    "start": "npm run build && node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
