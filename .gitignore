@@ -1,7 +1,9 @@
 node_modules
 keys
 dist
+generated
+
+/postgres
 
 .env
-
 package-lock.json
