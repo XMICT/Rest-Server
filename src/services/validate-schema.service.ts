@@ -8,12 +8,15 @@ export interface Validations {
 export class ValidateSchema {
   private readonly validations: Validations
 
-  constructor ({ allPropertiesRequired = false, additionalProperties = false }: Validations) {
-    this.validations = { allPropertiesRequired, additionalProperties }
+  constructor(validations: Validations = new Object()) {
+    this.validations = {
+      allPropertiesRequired: validations.allPropertiesRequired ?? false,
+      additionalProperties: validations.additionalProperties ?? false
+    }
   }
 
-  execute (fields: null | Record<string, unknown>, expectedProperties: string[]): void {
-    const { allPropertiesRequired = false, additionalProperties = false } = this.validations
+  execute(fields: null | Record<string, unknown>, expectedProperties: string[]): void {
+    const { allPropertiesRequired, additionalProperties } = this.validations
     if (fields == null || Object.keys(fields).length === 0) throw new ValidationError('No se recibio ninguna propiedad en el cuerpo de la peticion')
     const properties = Object.keys(fields)
 
@@ -26,7 +29,7 @@ export class ValidateSchema {
    * @param {string[]} properties Propiedades del objeto
    * @param {string[]} requiredProperties Propiedades que se requieren para continuar el proceso
    */
-  private checkRequiredProperties (properties: string[], requiredProperties: string[]): void {
+  private checkRequiredProperties(properties: string[], requiredProperties: string[]): void {
     const isValid = requiredProperties.every(property => properties.includes(property))
     if (!isValid) throw new ValidationError('No se recibieron todos los campos requeridos')
   }
@@ -36,7 +39,7 @@ export class ValidateSchema {
    * @param {string[]} properties Propiedades del objeto
    * @param {string[]} requiredProperties Propiedades con las que solamente debe contar
    */
-  private checkAdditionalProperties (properties: string[], requiredProperties: string[]): void {
+  private checkAdditionalProperties(properties: string[], requiredProperties: string[]): void {
     if (properties.length > requiredProperties.length) {
       throw new ValidationError('No se admiten propiedades adicionales')
     }

@@ -3,7 +3,7 @@ import { ValidateSchema, type Validations } from '../../services/validate-schema
 
 const validateSchema = (
   fields: string[],
-  options: Validations
+  options?: Validations
 ) => (req: Request, res: Response, next: NextFunction) => {
   const body = req.body
 

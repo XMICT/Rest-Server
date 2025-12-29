@@ -1,76 +1,59 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import type { Request, Response } from 'express'
 import { NotFoundError, ValidationError } from '../../utils/errors/custom.js'
+import { prisma } from '../../config/database/postgres/index.js'
 
-const todos = [
-  { id: 1, task: 'View Node JS Curse', createdAt: new Date() },
-  { id: 2, task: 'Practice mecanography', createdAt: new Date() }
-]
+interface Todo {
+  task: string,
+  completedAt?: Date
+}
 
 export class TodoContoller {
-  public getTodos = (req: Request, res: Response): Response => {
-    return res.status(200).json(todos)
+  public getTodos = async (req: Request, res: Response): Promise<Response> => {
+    const _todos = await prisma.todo.findMany()
+    return res.status(200).json(_todos)
   }
 
-  public getTodoById = (req: Request, res: Response): Response => {
-    const id = req.params.id
+  public getTodoById = async (req: Request, res: Response): Promise<Response> => {
+    const todoId = Number(req.params.id)
+    if (isNaN(todoId)) throw new ValidationError('El id debe ser un numero')
 
-    if (id == null) throw new ValidationError('Es requerido enviar el id')
+    const _todo = await prisma.todo.findUnique({ where: { id: todoId } })
+    if (_todo == null) throw new NotFoundError('No se encontro el todo registrado')
 
-    const todo = todos.find(t => t.id === Number(id))
-    if (todo == null) throw new NotFoundError('No se encontro el todo registrado')
-
-    return res.status(200).json(todo)
+    return res.status(200).json(_todo)
   }
 
-  public createTodo = (req: Request, res: Response): Response => {
-    const body = req.body
+  public createTodo = async (req: Request, res: Response): Promise<Response> => {
+    const { task } = req.body
 
-    const newTodo = {
-      id: this.getNewId(),
-      task: body.task,
-      createdAt: new Date()
-    }
-
-    todos.push(newTodo)
-    return res.status(200).json(newTodo)
+    const _todo = await prisma.todo.create({ data: { task } })
+    return res.status(200).json(_todo)
   }
 
-  public updateTodo = (req: Request, res: Response): Response => {
-    const todoId = req.params.id
-    const { task, createdAt } = req.body
-    const data = { task, createdAt }
+  public updateTodo = async (req: Request, res: Response): Promise<Response> => {
+    const todoId = Number(req.params.id)
+    const { task } = req.body
+    if (isNaN(todoId)) throw new ValidationError('El id debe ser un numero')
 
-    /** 1. Manejado de forma mutable
-      const todoFounded = todos.find(todo => todo.id === Number(todoId))
-      todoFounded.task = body.task
-    */
+    const _todo = await prisma.todo.findUnique({ where: { id: todoId } })
+    if (!_todo) throw new NotFoundError('No se encontro el todo')
 
-    const todo = todos.find(todo => todo.id === Number(todoId))
-    if (todo == null) throw new NotFoundError('No se encontro el todo')
+    const dataToUpdate: Partial<Todo> = new Object()
+    if (task) dataToUpdate.task = task
 
-    data.task = task || todo.task
-    if (typeof createdAt !== 'undefined') {
-      data.createdAt = new Date(createdAt || todo.createdAt)
-    }
-
-    const todoIndexFounded = todos.findIndex(todo => todo.id === Number(todoId))
-    todos[todoIndexFounded] = { ...todo, ...data }
-
-    return res.status(200).json(todos[todoIndexFounded])
+    const _todoUpdated = await prisma.todo.update({ data: dataToUpdate, where: { id: todoId } })
+    return res.status(200).json(_todoUpdated)
   }
 
-  public deleteTodo = (req: Request, res: Response): Response => {
-    const todoId = req.params.id
+  public deleteTodo = async (req: Request, res: Response): Promise<Response> => {
+    const todoId = Number(req.params.id)
+    if (isNaN(todoId)) throw new ValidationError('El id debe ser un numero')
 
-    const todo = todos.find(todo => todo.id === Number(todoId))
+    const todo = await prisma.todo.findUnique({ where: { id: todoId } })
     if (!todo) throw new NotFoundError('No se encontro el todo')
 
-    todos.splice(todos.indexOf(todo), 1)
-    return res.status(200).json(todo)
-  }
-
-  private getNewId (): number {
-    return todos.length + 1
+    const todoDeleted = await prisma.todo.delete({ where: { id: todoId } })
+    return res.status(200).json(todoDeleted)
   }
 }
