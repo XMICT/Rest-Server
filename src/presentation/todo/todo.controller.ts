@@ -2,6 +2,7 @@
 import type { Request, Response } from 'express'
 import { NotFoundError, ValidationError } from '../../utils/errors/custom.js'
 import { prisma } from '../../config/database/postgres/index.js'
+import { CreateTodoDto } from '../../ domain/dto/index.js'
 
 interface Todo {
   task: string,
@@ -25,9 +26,10 @@ export class TodoContoller {
   }
 
   public createTodo = async (req: Request, res: Response): Promise<Response> => {
-    const { task } = req.body
+    const [error, todo] = CreateTodoDto.create(req.body)
+    if (error) throw new ValidationError(error)
 
-    const _todo = await prisma.todo.create({ data: { task } })
+    const _todo = await prisma.todo.create({ data: todo! })
     return res.status(200).json(_todo)
   }
 
