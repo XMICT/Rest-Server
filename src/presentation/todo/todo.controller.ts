@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/strict-boolean-expressions */
 import type { Request, Response } from 'express'
 import { NotFoundError, ValidationError } from '../../utils/errors/custom.js'
+import { CreateTodoDto, UpdateTodoDto } from '../../ domain/dto/index.js'
 import { prisma } from '../../config/database/postgres/index.js'
-import { CreateTodoDto } from '../../ domain/dto/index.js'
 
 interface Todo {
   task: string,
@@ -35,16 +35,18 @@ export class TodoContoller {
 
   public updateTodo = async (req: Request, res: Response): Promise<Response> => {
     const todoId = Number(req.params.id)
-    const { task } = req.body
-    if (isNaN(todoId)) throw new ValidationError('El id debe ser un numero')
+
+    const [error, updateTodoDto] = UpdateTodoDto.update({ ...req.body, id: todoId })
+    if (error) throw new ValidationError(error)
 
     const _todo = await prisma.todo.findUnique({ where: { id: todoId } })
-    if (!_todo) throw new NotFoundError('No se encontro el todo')
+    if (!_todo) throw new NotFoundError('No se encontro el todo registrado')
 
-    const dataToUpdate: Partial<Todo> = new Object()
-    if (task) dataToUpdate.task = task
+    const _todoUpdated = await prisma.todo.update({
+      data: updateTodoDto!.values,
+      where: { id: todoId }
+    })
 
-    const _todoUpdated = await prisma.todo.update({ data: dataToUpdate, where: { id: todoId } })
     return res.status(200).json(_todoUpdated)
   }
 
