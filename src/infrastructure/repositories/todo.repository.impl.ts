@@ -8,7 +8,7 @@ export class TodoRepositoryImpl implements TodoRepository {
     getAll(): Promise<Todo[]> {
         return this.todoDataSource.getAll()
     }
-    getById(id: number): Promise<Todo | null> {
+    getById(id: number): Promise<Todo> {
         return this.todoDataSource.getById(id)
     }
     create(createTodoDto: CreateTodoDto): Promise<Todo> {
